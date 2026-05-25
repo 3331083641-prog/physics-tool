@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>刚体转动惯量实验数据计算工具</title>
+    <style>
+        :root {
+            --primary-color: #1890ff;
+            --danger-color: #ff4d4f;
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-secondary: #666666;
+            --border-color: #e8e8e8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #002c8c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-group label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .input-group input {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: 80px 1fr 1fr 1fr;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .data-label {
+            font-weight: bold;
+            text-align: center;
+            color: var(--text-main);
+        }
+
+        .actions {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            padding: 12px 32px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: opacity 0.3s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 6px rgba(24, 144, 255, 0.3);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+            box-shadow: 0 4px 6px rgba(255, 77, 79, 0.3);
+        }
+
+        .result-box {
+            display: none;
+            background-color: #f6ffed;
+            border: 1px solid #b7eb8f;
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 20px;
+        }
+
+        .result-box.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .result-item {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .result-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .result-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-color);
+            word-break: break-all;
+        }
+
+        .final-result {
+            grid-column: 1 / -1;
+            background-color: #e6f7ff;
+            border: 1px solid #91d5ff;
+            text-align: center;
+            padding: 20px;
+            font-size: 24px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>📐 刚体转动惯量实验数据计算工具</h1>
+        <p>输入实验测量数据，自动计算转动惯量、误差及其相关不确定度 (采用国际单位制)</p>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📝 基础常数与仪器参数输入</div>
+        <div class="input-grid">
+            <div class="input-group">
+                <label>砝码质量 m (kg)</label>
+                <input type="number" id="m" step="any" value="0.11740">
+            </div>
+            <div class="input-group">
+                <label>塔轮半径 r (m)</label>
+                <input type="number" id="r" step="any" value="0.02030">
+            </div>
+            <div class="input-group">
+                <label>圆盘质量 M (kg)</label>
+                <input type="number" id="M" step="any" value="0.58054">
+            </div>
+            <div class="input-group">
+                <label>圆盘半径 R (m)</label>
+                <input type="number" id="R" step="any" value="0.1000">
+            </div>
+            <div class="input-group">
+                <label>重力加速度 g (m/s²)</label>
+                <input type="number" id="g" step="any" value="9.80">
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">⚠️ 直接测量的不确定度限值 (Δ仪器)</div>
+        <div class="input-grid">
+            <div class="input-group">
+                <label>质量限值 Δm (kg)</label>
+                <input type="number" id="delta_m" step="any" value="0.00001">
+            </div>
+            <div class="input-group">
+                <label>长度限值 Δr (m)</label>
+                <input type="number" id="delta_r" step="any" value="0.0001">
+            </div>
+            <div class="input-group">
+                <label>角加速度限值 Δβ (rad/s²)</label>
+                <input type="number" id="delta_beta" step="any" value="0.001">
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">⏱️ 角加速度测量数据输入 β (rad/s²)</div>
+        <div class="data-grid" style="color: var(--text-secondary); font-size: 13px; margin-bottom: 4px;">
+            <div>变量组别</div>
+            <div>第1次测量</div>
+            <div>第2次测量</div>
+            <div>第3次测量</div>
+        </div>
+        
+        <div class="data-grid">
+            <div class="data-label">β1 (载物台有力矩)</div>
+            <input type="number" id="b1_1" step="any" value="5.619">
+            <input type="number" id="b1_2" step="any" value="5.592">
+            <input type="number" id="b1_3" step="any" value="5.475">
+        </div>
+        <div class="data-grid">
+            <div class="data-label">β2 (载物台无力矩)</div>
+            <input type="number" id="b2_1" step="any" value="-0.325">
+            <input type="number" id="b2_2" step="any" value="-0.328">
+            <input type="number" id="b2_3" step="any" value="-0.334">
+        </div>
+        <div class="data-grid">
+            <div class="data-label">β3 (加圆盘有力矩)</div>
+            <input type="number" id="b3_1" step="any" value="3.177">
+            <input type="number" id="b3_2" step="any" value="3.197">
+            <input type="number" id="b3_3" step="any" value="3.166">
+        </div>
+        <div class="data-grid">
+            <div class="data-label">β4 (加圆盘无力矩)</div>
+            <input type="number" id="b4_1" step="any" value="-0.172">
+            <input type="number" id="b4_2" step="any" value="-0.164">
+            <input type="number" id="b4_3" step="any" value="-0.141">
+        </div>
+    </div>
+
+    <div class="actions">
+        <button class="btn btn-primary" onclick="calculate()">🧮 计算结果</button>
+        <button class="btn btn-danger" onclick="resetInputs()">🔄 重置输入</button>
+    </div>
+
+    <div id="resultBox" class="result-box">
+        <div class="card-title" style="border-bottom-color: #b7eb8f; color: #389e0d;">📊 计算结果展示</div>
+        <div class="result-grid">
+            <div class="result-item">
+                <div class="result-title">载物台转动惯量 I₀ (kg·m²)</div>
+                <div class="result-value" id="res_I0">-</div>
+            </div>
+            <div class="result-item">
+                <div class="result-title">总转动惯量 I₁ (kg·m²)</div>
+                <div class="result-value" id="res_I1">-</div>
+            </div>
+            <div class="result-item">
+                <div class="result-title">圆盘转动惯量 实验值 I盘 (kg·m²)</div>
+                <div class="result-value" id="res_Idisk">-</div>
+            </div>
+            <div class="result-item">
+                <div class="result-title">圆盘转动惯量 理论值 (kg·m²)</div>
+                <div class="result-value" id="res_Itheory">-</div>
+            </div>
+            <div class="result-item">
+                <div class="result-title">测量相对误差 E (%)</div>
+                <div class="result-value" id="res_Error">-</div>
+            </div>
+            <div class="result-item">
+                <div class="result-title">合成不确定度 u(I) (kg·m²)</div>
+                <div class="result-value" id="res_uI">-</div>
+            </div>
+            <div class="result-item final-result">
+                <div class="result-title" style="color: #0050b3;">最终实验结果表达</div>
+                <div class="result-value" style="color: #0050b3; font-size: 28px;" id="res_Final">-</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function getVal(id) {
+        return parseFloat(document.getElementById(id).value) || 0;
+    }
+
+    function getArr(prefix) {
+        return [
+            getVal(prefix + '_1'),
+            getVal(prefix + '_2'),
+            getVal(prefix + '_3')
+        ];
+    }
+
+    function calcMean(arr) {
+        return arr.reduce((a, b) => a + b, 0) / arr.length;
+    }
+
+    function calcTypeA(arr) {
+        const mean = calcMean(arr);
+        const sumSq = arr.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0);
+        return Math.sqrt(sumSq / (arr.length * (arr.length - 1)));
+    }
+
+    function calculate() {
+        try {
+            // 1. 获取常数与限值
+            const m = getVal('m');
+            const r = getVal('r');
+            const M = getVal('M');
+            const R = getVal('R');
+            const g = getVal('g');
+            
+            const delta_m = getVal('delta_m');
+            const delta_r = getVal('delta_r');
+            const delta_beta = getVal('delta_beta');
+
+            // 2. 获取角加速度数据并求平均值
+            const b1 = getArr('b1'), b1_bar = calcMean(b1);
+            const b2 = getArr('b2'), b2_bar = calcMean(b2);
+            const b3 = getArr('b3'), b3_bar = calcMean(b3);
+            const b4 = getArr('b4'), b4_bar = calcMean(b4);
+
+            // 3. 计算转动惯量
+            const I0 = (m * r * (g - r * b1_bar)) / (b1_bar - b2_bar);
+            const I1 = (m * r * (g - r * b3_bar)) / (b3_bar - b4_bar);
+            const I_disk = I1 - I0;
+            const I_theory = 0.5 * M * Math.pow(R, 2);
+            const E = Math.abs(I_disk - I_theory) / I_theory * 100;
+
+            // 4. 计算不确定度
+            // B类不确定度
+            const uB_m = delta_m / Math.sqrt(3);
+            const uB_r = delta_r / Math.sqrt(3);
+            const uB_beta = delta_beta / Math.sqrt(3);
+
+            // 长度和质量只考虑B类
+            const u_m = uB_m;
+            const u_r = uB_r;
+
+            // 角加速度合成不确定度
+            const u_b1 = Math.sqrt(Math.pow(calcTypeA(b1), 2) + Math.pow(uB_beta, 2));
+            const u_b2 = Math.sqrt(Math.pow(calcTypeA(b2), 2) + Math.pow(uB_beta, 2));
+            const u_b3 = Math.sqrt(Math.pow(calcTypeA(b3), 2) + Math.pow(uB_beta, 2));
+            const u_b4 = Math.sqrt(Math.pow(calcTypeA(b4), 2) + Math.pow(uB_beta, 2));
+
+            // I0 不确定度传递公式
+            const term1 = Math.pow(u_m / m, 2);
+            const term2_I0 = Math.pow((1/r - b1_bar/(g - r*b1_bar)) * u_r, 2);
+            const term3_I0 = Math.pow((-r/(g - r*b1_bar) - 1/(b1_bar - b2_bar)) * u_b1, 2);
+            const term4_I0 = Math.pow(u_b2 / (b1_bar - b2_bar), 2);
+            const u_I0 = I0 * Math.sqrt(term1 + term2_I0 + term3_I0 + term4_I0);
+
+            // I1 不确定度传递公式
+            const term2_I1 = Math.pow((1/r - b3_bar/(g - r*b3_bar)) * u_r, 2);
+            const term3_I1 = Math.pow((-r/(g - r*b3_bar) - 1/(b3_bar - b4_bar)) * u_b3, 2);
+            const term4_I1 = Math.pow(u_b4 / (b3_bar - b4_bar), 2);
+            const u_I1 = I1 * Math.sqrt(term1 + term2_I1 + term3_I1 + term4_I1);
+
+            // 圆盘不确定度
+            const u_I = Math.sqrt(Math.pow(u_I1, 2) + Math.pow(u_I0, 2));
+
+            // 5. 渲染结果 (保留5位小数符合物理实验有效数字要求)
+            document.getElementById('res_I0').innerText = I0.toFixed(5);
+            document.getElementById('res_I1').innerText = I1.toFixed(5);
+            document.getElementById('res_Idisk').innerText = I_disk.toFixed(5);
+            document.getElementById('res_Itheory').innerText = I_theory.toFixed(5);
+            document.getElementById('res_Error').innerText = E.toFixed(2) + " %";
+            
+            // 使用科学计数法或者固定小数位展示不确定度
+            document.getElementById('res_uI').innerText = u_I.toFixed(5) + " (" + u_I.toExponential(2) + ")";
+
+            // 最终结果表达：I = I_disk ± u_I
+            document.getElementById('res_Final').innerText = `I = (${I_disk.toFixed(5)} ± ${u_I.toFixed(5)}) kg·m²`;
+
+            // 显示结果面板
+            document.getElementById('resultBox').classList.add('active');
+            
+            // 滚动到结果区域
+            document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+        } catch (error) {
+            alert("计算出错，请检查输入的数据是否合法有效！");
+            console.error(error);
+        }
+    }
+
+    function resetInputs() {
+        if(confirm("确定要重置所有数据到默认状态吗？")) {
+            // 刷新页面即可重置回 HTML 中设定的默认 value
+            window.location.reload();
+        }
+    }
+</script>
+
+</body>
+</html>
