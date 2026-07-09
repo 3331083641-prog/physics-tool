@@ -3,543 +3,799 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>刚体转动惯量实验数据计算工具｜六组β新版</title>
+  <title>刚体转动惯量实验数据计算工具</title>
   <style>
     :root {
-      --primary-color: #0b5ed7;
-      --primary-light: #eaf3ff;
-      --danger-color: #ff4d4f;
-      --success-color: #21a67a;
-      --bg-color: #f0f4f8;
-      --card-bg: #ffffff;
-      --text-main: #222222;
-      --text-secondary: #666666;
-      --border-color: #d9e2ec;
-      --shadow: 0 6px 18px rgba(18, 52, 86, 0.08);
+      --primary: #0b5ed7;
+      --primary-2: #1677ff;
+      --primary-dark: #003a8c;
+      --danger: #ff4d4f;
+      --success: #20a162;
+      --bg: #eef4fb;
+      --card: #ffffff;
+      --line: #d8e3f0;
+      --text: #1f2937;
+      --muted: #64748b;
+      --shadow: 0 8px 22px rgba(15, 45, 90, 0.08);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+    }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-                   Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
-      background: linear-gradient(180deg, #eef6ff 0%, var(--bg-color) 100%);
-      color: var(--text-main);
       margin: 0;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top left, rgba(24, 160, 251, 0.10), transparent 32%),
+        linear-gradient(180deg, #f6fbff 0%, var(--bg) 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+        Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
     }
 
-    .container {
-      max-width: 1040px;
-      width: 100%;
+    .app {
+      width: min(1500px, 100vw);
+      height: 100vh;
+      margin: 0 auto;
+      padding: 14px 18px;
+      display: grid;
+      grid-template-rows: 74px 1fr;
+      gap: 12px;
     }
 
-    .header {
-      text-align: center;
-      margin-bottom: 22px;
-    }
-
-    .header h1 {
-      color: #002c8c;
+    .topbar {
+      background: linear-gradient(135deg, #003a8c, #0b5ed7);
+      color: #fff;
+      border-radius: 18px;
+      padding: 12px 18px;
+      box-shadow: var(--shadow);
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin: 0 0 8px;
-      font-size: 30px;
-      letter-spacing: 0.5px;
+      justify-content: flex-start;
     }
 
-    .header p {
-      color: var(--text-secondary);
-      font-size: 14px;
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.16);
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      flex: 0 0 auto;
+    }
+
+    h1 {
+      font-size: clamp(23px, 2.2vw, 34px);
       margin: 0;
-      line-height: 1.7;
+      letter-spacing: 0.4px;
+      line-height: 1.2;
+      font-weight: 900;
+    }
+
+    .layout {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      align-items: stretch;
+      transition: grid-template-columns 0.28s ease;
+    }
+
+    .layout.results-open {
+      grid-template-columns: minmax(0, 1.78fr) minmax(350px, 0.72fr);
+    }
+
+    .left-column,
+    .right-column {
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .right-column {
+      display: none;
+    }
+
+    .layout.results-open .right-column {
+      display: flex;
+      animation: slideIn 0.28s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(28px) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+      }
     }
 
     .card {
-      background-color: var(--card-bg);
-      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid rgba(11, 94, 215, 0.10);
+      border-radius: 16px;
       box-shadow: var(--shadow);
-      padding: 22px;
-      margin-bottom: 18px;
-      border: 1px solid rgba(11, 94, 215, 0.08);
+      overflow: hidden;
     }
 
     .card-title {
-      font-size: 17px;
-      font-weight: 800;
-      color: var(--primary-color);
-      margin-bottom: 16px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border-color);
+      min-height: 42px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 16px;
+      background: linear-gradient(90deg, var(--primary), var(--primary-2));
+      color: #fff;
+      font-size: 17px;
+      font-weight: 900;
+      letter-spacing: 0.2px;
     }
 
-    .sub-tip {
-      color: var(--text-secondary);
-      font-size: 13px;
-      line-height: 1.7;
-      margin: -6px 0 14px;
-      background: #f8fbff;
-      border-left: 4px solid var(--primary-color);
-      padding: 8px 12px;
-      border-radius: 6px;
+    .card-title .sub {
+      font-size: 12px;
+      font-weight: 700;
+      opacity: 0.9;
+    }
+
+    .card-body {
+      padding: 14px 16px;
+    }
+
+    .param-card,
+    .unc-card {
+      flex: 0 0 auto;
+    }
+
+    .beta-card {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .beta-card .card-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      padding: 14px 16px 16px;
     }
 
     .input-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 14px;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
     }
 
-    .input-group {
+    .uncertainty-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .field {
       display: flex;
       flex-direction: column;
       gap: 6px;
+      min-width: 0;
     }
 
-    .input-group label {
+    .field label {
+      color: var(--muted);
       font-size: 13px;
-      color: var(--text-secondary);
-      line-height: 1.35;
+      font-weight: 800;
+      line-height: 1.2;
+      white-space: nowrap;
     }
 
     input {
-      padding: 9px 11px;
-      border: 1px solid var(--border-color);
-      border-radius: 7px;
-      font-size: 14px;
-      outline: none;
-      transition: border-color 0.25s, box-shadow 0.25s;
+      width: 100%;
+      border: 1px solid var(--line);
       background: #fff;
+      border-radius: 9px;
+      padding: 8px 9px;
+      font-size: 15px;
+      outline: none;
+      color: var(--text);
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
     }
 
     input:focus {
-      border-color: var(--primary-color);
+      border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(11, 94, 215, 0.13);
+      background: #fbfdff;
     }
 
-    .beta-wrap {
-      overflow-x: auto;
-      padding-bottom: 4px;
+    .beta-table {
+      width: 100%;
+      height: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      overflow: hidden;
+      background: #fff;
+      table-layout: fixed;
     }
 
-    .data-grid {
-      display: grid;
-      grid-template-columns: minmax(160px, 1.4fr) repeat(6, minmax(92px, 1fr));
-      gap: 10px;
-      align-items: center;
-      min-width: 760px;
-      margin-bottom: 11px;
-    }
-
-    .data-head {
-      color: var(--text-secondary);
+    .beta-table th {
+      background: #f0f7ff;
+      color: var(--primary-dark);
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 900;
+      padding: 9px 6px;
+      border-bottom: 1px solid var(--line);
       text-align: center;
+      white-space: nowrap;
     }
 
-    .data-label {
-      font-weight: 800;
-      text-align: left;
-      color: var(--text-main);
-      padding-left: 4px;
-      line-height: 1.35;
+    .beta-table td {
+      border-bottom: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      padding: 8px 7px;
+      text-align: center;
+      vertical-align: middle;
     }
 
-    .actions {
+    .beta-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .beta-table td:last-child,
+    .beta-table th:last-child {
+      border-right: none;
+    }
+
+    .beta-table th:first-child,
+    .beta-table td:first-child {
+      width: 18%;
+    }
+
+    .beta-table th:not(:first-child),
+    .beta-table td:not(:first-child) {
+      width: 13.666%;
+    }
+
+    .row-label {
+      text-align: left !important;
+      font-weight: 900;
+      color: var(--primary-dark);
+      background: #fbfdff;
+      line-height: 1.3;
+      font-size: 14px;
+    }
+
+    .beta-table input {
+      text-align: center;
+      padding: 7px 5px;
+      font-size: 14.5px;
+      min-width: 0;
+    }
+
+    .result-card {
+      height: 100%;
       display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(11, 94, 215, 0.18);
+    }
+
+    .result-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 14px 16px;
+    }
+
+    .left-actions {
+      display: grid;
+      grid-template-columns: 180px 180px;
+      gap: 14px;
       justify-content: center;
-      gap: 18px;
-      margin: 24px 0 28px;
-      flex-wrap: wrap;
+      margin-top: 10px;
     }
 
     .btn {
-      padding: 12px 32px;
-      font-size: 16px;
-      font-weight: 800;
       border: none;
-      border-radius: 9px;
+      border-radius: 11px;
+      padding: 11px 10px;
+      color: #fff;
       cursor: pointer;
-      transition: opacity 0.25s, transform 0.1s, box-shadow 0.25s;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 0.3px;
+      transition: transform 0.12s, filter 0.2s, box-shadow 0.2s;
     }
 
-    .btn:hover { opacity: 0.92; }
-    .btn:active { transform: scale(0.98); }
+    .btn:hover {
+      filter: brightness(1.03);
+      box-shadow: 0 8px 18px rgba(15, 45, 90, 0.14);
+    }
+
+    .btn:active {
+      transform: scale(0.985);
+    }
 
     .btn-primary {
-      background: linear-gradient(135deg, #0b5ed7, #1890ff);
-      color: white;
-      box-shadow: 0 6px 12px rgba(11, 94, 215, 0.24);
+      background: linear-gradient(135deg, #0b5ed7, #18a0fb);
     }
 
     .btn-danger {
       background: linear-gradient(135deg, #ff4d4f, #ff7875);
-      color: white;
-      box-shadow: 0 6px 12px rgba(255, 77, 79, 0.20);
     }
 
-    .result-box {
-      display: none;
-      background-color: #f6ffed;
-      border: 1px solid #b7eb8f;
-      border-radius: 14px;
-      padding: 22px;
-      margin-top: 18px;
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: #f0f7ff;
+      border: 1px solid #cfe4ff;
+      color: var(--primary-dark);
+      padding: 9px 11px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.35;
+      margin-bottom: 10px;
+      flex: 0 0 auto;
     }
 
-    .result-box.active {
-      display: block;
-      animation: fadeIn 0.45s ease-out;
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px rgba(32, 161, 98, 0.14);
+      flex: 0 0 auto;
     }
 
     .result-grid {
+      flex: 1 1 auto;
+      min-height: 0;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(225px, 1fr));
-      gap: 16px;
+      grid-template-columns: 1fr;
+      gap: 9px;
     }
 
     .result-item {
       background: #fff;
-      padding: 15px;
-      border-radius: 10px;
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 9px 11px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 0;
     }
 
     .result-title {
-      font-size: 13px;
-      color: var(--text-secondary);
-      margin-bottom: 8px;
-      line-height: 1.45;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 3px;
+      line-height: 1.25;
     }
 
     .result-value {
-      font-size: 19px;
-      font-weight: 900;
-      color: var(--primary-color);
+      color: var(--primary);
+      font-size: 18px;
+      font-weight: 950;
+      line-height: 1.2;
       word-break: break-all;
+      min-height: 21px;
+    }
+
+    .result-item.final {
+      background: linear-gradient(180deg, #eaf6ff, #ffffff);
+      border-color: #91d5ff;
+      text-align: center;
+      padding: 12px 10px;
+    }
+
+    .result-item.final .result-title {
+      margin-bottom: 5px;
+    }
+
+    .result-item.final .result-value {
+      color: #003a8c;
+      font-size: clamp(18px, 1.35vw, 24px);
       line-height: 1.35;
     }
 
-    .final-result {
-      grid-column: 1 / -1;
-      background-color: #e6f7ff;
-      border: 1px solid #91d5ff;
-      text-align: center;
-      padding: 20px;
+    .mean-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 10px;
+      flex: 0 0 auto;
     }
 
-    .final-result .result-value {
-      color: #0050b3;
-      font-size: 28px;
-    }
-
-    .mean-table {
+    .mean-card table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 16px;
-      background: #fff;
-      border-radius: 10px;
-      overflow: hidden;
-      border: 1px solid var(--border-color);
+      table-layout: fixed;
     }
 
-    .mean-table th,
-    .mean-table td {
-      border: 1px solid var(--border-color);
-      padding: 10px;
+    .mean-card th,
+    .mean-card td {
+      border: 1px solid var(--line);
+      padding: 6px 4px;
       text-align: center;
-      font-size: 14px;
-    }
-
-    .mean-table th {
-      background: var(--primary-light);
-      color: #003a8c;
-      font-weight: 800;
-    }
-
-    .formula-box {
-      background: #fff;
-      border: 1px dashed #8ab8ff;
-      border-radius: 10px;
-      padding: 12px 14px;
-      color: #003a8c;
-      font-size: 14px;
-      line-height: 1.8;
-      margin-top: 14px;
-    }
-
-    .note {
-      color: var(--text-secondary);
       font-size: 12px;
-      line-height: 1.7;
-      margin-top: 10px;
+      line-height: 1.2;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .mean-card th {
+      background: #f0f7ff;
+      color: var(--primary-dark);
+      font-weight: 900;
+    }
+
+    .mean-card td:first-child {
+      color: var(--muted);
+      font-weight: 900;
+      background: #fbfdff;
+      width: 75px;
+    }
+
+    @media (max-width: 1120px) {
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        height: auto;
+        min-height: 100vh;
+        grid-template-rows: auto auto;
+      }
+
+      .layout,
+      .layout.results-open {
+        grid-template-columns: 1fr;
+      }
+
+      .layout.results-open .right-column {
+        display: flex;
+      }
+
+      .input-grid,
+      .uncertainty-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .result-card {
+        height: auto;
+      }
+
+      .result-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .result-item.final {
+        grid-column: 1 / -1;
+      }
+
+      .left-actions {
+        grid-template-columns: 1fr 1fr;
+      }
     }
 
     @media (max-width: 640px) {
-      body { padding: 12px; }
-      .header h1 { font-size: 23px; }
-      .card { padding: 16px; }
-      .btn { width: 100%; justify-content: center; }
-      .final-result .result-value { font-size: 22px; }
+      .app {
+        padding: 10px;
+      }
+
+      .topbar {
+        border-radius: 14px;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+
+      .brand-icon {
+        width: 42px;
+        height: 42px;
+      }
+
+      .input-grid,
+      .uncertainty-grid,
+      .result-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .left-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .beta-table th:first-child,
+      .beta-table td:first-child {
+        width: 126px;
+      }
+
+      .beta-table {
+        min-width: 760px;
+      }
+
+      .beta-card .card-body {
+        overflow-x: auto;
+      }
     }
   </style>
 </head>
+
 <body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon">📐</div>
+        <h1>刚体转动惯量实验数据计算工具</h1>
+      </div>
+    </header>
 
-<div class="container">
-  <div class="header">
-    <h1>📐 刚体转动惯量实验数据计算工具</h1>
-    <p>六组 β 读数新版：自动求平均值，计算载物台转动惯量、载物台+圆盘转动惯量、圆盘实验值、理论值、相对误差与合成不确定度。</p>
+    <main class="layout" id="mainLayout">
+      <section class="left-column">
+        <section class="card param-card">
+          <div class="card-title">
+            <span>📝 基础常数与仪器参数输入</span>
+          </div>
+          <div class="card-body">
+            <div class="input-grid">
+              <div class="field">
+                <label for="m">砝码质量 m / kg</label>
+                <input type="number" id="m" step="any" value="0.11740">
+              </div>
+              <div class="field">
+                <label for="r">塔轮半径 r / m</label>
+                <input type="number" id="r" step="any" value="0.02030">
+              </div>
+              <div class="field">
+                <label for="M">圆盘质量 M / kg</label>
+                <input type="number" id="M" step="any" value="0.58054">
+              </div>
+              <div class="field">
+                <label for="R">圆盘半径 R / m</label>
+                <input type="number" id="R" step="any" value="0.1000">
+              </div>
+              <div class="field">
+                <label for="g">重力加速度 g / m·s⁻²</label>
+                <input type="number" id="g" step="any" value="9.80">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card unc-card">
+          <div class="card-title">
+            <span>⚠️ 直接测量的不确定度限值</span>
+          </div>
+          <div class="card-body">
+            <div class="uncertainty-grid">
+              <div class="field">
+                <label for="delta_m">质量限值 Δm / kg</label>
+                <input type="number" id="delta_m" step="any" value="0.00001">
+              </div>
+              <div class="field">
+                <label for="delta_r">塔轮半径限值 Δr / m</label>
+                <input type="number" id="delta_r" step="any" value="0.0001">
+              </div>
+              <div class="field">
+                <label for="delta_beta">角加速度限值 Δβ / rad·s⁻²</label>
+                <input type="number" id="delta_beta" step="any" value="0.001">
+              </div>
+              <div class="field">
+                <label for="k_beta">角加速度置信因子 kβ</label>
+                <input type="number" id="k_beta" step="any" value="3">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card beta-card">
+          <div class="card-title">
+            <span>⏱️ 角加速度测量数据输入 β / rad·s⁻²</span>
+          </div>
+          <div class="card-body">
+            <table class="beta-table">
+              <thead>
+                <tr>
+                  <th>变量组别</th>
+                  <th>第1次</th>
+                  <th>第2次</th>
+                  <th>第3次</th>
+                  <th>第4次</th>
+                  <th>第5次</th>
+                  <th>第6次</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="row-label">β₁ 载物台有力矩</td>
+                  <td><input type="number" id="b1_1" step="any" value="5.619"></td>
+                  <td><input type="number" id="b1_2" step="any" value="5.624"></td>
+                  <td><input type="number" id="b1_3" step="any" value="5.592"></td>
+                  <td><input type="number" id="b1_4" step="any" value="5.589"></td>
+                  <td><input type="number" id="b1_5" step="any" value="5.566"></td>
+                  <td><input type="number" id="b1_6" step="any" value="5.382"></td>
+                </tr>
+                <tr>
+                  <td class="row-label">β₂ 载物台无力矩</td>
+                  <td><input type="number" id="b2_1" step="any" value="-0.325"></td>
+                  <td><input type="number" id="b2_2" step="any" value="-0.340"></td>
+                  <td><input type="number" id="b2_3" step="any" value="-0.325"></td>
+                  <td><input type="number" id="b2_4" step="any" value="-0.331"></td>
+                  <td><input type="number" id="b2_5" step="any" value="-0.323"></td>
+                  <td><input type="number" id="b2_6" step="any" value="-0.330"></td>
+                </tr>
+                <tr>
+                  <td class="row-label">β₃ 载物台+圆盘有力矩</td>
+                  <td><input type="number" id="b3_1" step="any" value="3.177"></td>
+                  <td><input type="number" id="b3_2" step="any" value="3.217"></td>
+                  <td><input type="number" id="b3_3" step="any" value="3.197"></td>
+                  <td><input type="number" id="b3_4" step="any" value="3.205"></td>
+                  <td><input type="number" id="b3_5" step="any" value="3.194"></td>
+                  <td><input type="number" id="b3_6" step="any" value="3.089"></td>
+                </tr>
+                <tr>
+                  <td class="row-label">β₄ 载物台+圆盘无力矩</td>
+                  <td><input type="number" id="b4_1" step="any" value="-0.172"></td>
+                  <td><input type="number" id="b4_2" step="any" value="-0.152"></td>
+                  <td><input type="number" id="b4_3" step="any" value="-0.164"></td>
+                  <td><input type="number" id="b4_4" step="any" value="-0.154"></td>
+                  <td><input type="number" id="b4_5" step="any" value="-0.158"></td>
+                  <td><input type="number" id="b4_6" step="any" value="-0.153"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <div class="left-actions">
+          <button class="btn btn-primary" onclick="showResults()">计算结果</button>
+          <button class="btn btn-danger" onclick="resetInputs()">重置输入</button>
+        </div>
+      </section>
+
+      <aside class="right-column" id="resultColumn">
+        <section class="card result-card">
+          <div class="card-title">
+            <span>📊 计算结果</span>
+            <span class="sub">实时展示区</span>
+          </div>
+          <div class="result-body">
+            <div class="status">
+              <span class="status-dot"></span>
+              <span id="statusText">计算完成，右侧结果已更新。</span>
+            </div>
+
+            <div class="result-grid">
+              <div class="result-item">
+                <div class="result-title">载物台转动惯量 I₀ / kg·m²</div>
+                <div class="result-value" id="res_I0">—</div>
+              </div>
+              <div class="result-item">
+                <div class="result-title">载物台+圆盘总转动惯量 I₁ / kg·m²</div>
+                <div class="result-value" id="res_I1">—</div>
+              </div>
+              <div class="result-item">
+                <div class="result-title">圆盘转动惯量实验值 I盘 / kg·m²</div>
+                <div class="result-value" id="res_Idisk">—</div>
+              </div>
+              <div class="result-item">
+                <div class="result-title">圆盘转动惯量理论值 I理论 / kg·m²</div>
+                <div class="result-value" id="res_Itheory">—</div>
+              </div>
+              <div class="result-item">
+                <div class="result-title">测量相对误差 E</div>
+                <div class="result-value" id="res_Error">—</div>
+              </div>
+              <div class="result-item">
+                <div class="result-title">合成标准不确定度 u(I盘) / kg·m²</div>
+                <div class="result-value" id="res_uI">—</div>
+              </div>
+              <div class="result-item final">
+                <div class="result-title">最终实验结果表达</div>
+                <div class="result-value" id="res_Final">—</div>
+              </div>
+            </div>
+
+            <div class="mean-card">
+              <table>
+                <thead>
+                  <tr>
+                    <th>项目</th>
+                    <th>β₁</th>
+                    <th>β₂</th>
+                    <th>β₃</th>
+                    <th>β₄</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>平均值</td>
+                    <td id="mean_b1">—</td>
+                    <td id="mean_b2">—</td>
+                    <td id="mean_b3">—</td>
+                    <td id="mean_b4">—</td>
+                  </tr>
+                  <tr>
+                    <td>A类</td>
+                    <td id="ua_b1">—</td>
+                    <td id="ua_b2">—</td>
+                    <td id="ua_b3">—</td>
+                    <td id="ua_b4">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </main>
   </div>
 
-  <div class="card">
-    <div class="card-title">📝 基础常数与仪器参数输入</div>
-    <div class="sub-tip">
-      单位已统一为国际单位制：质量 kg，长度 m，角加速度 rad/s²。默认值已按当前 PPT 数据页填入。
-    </div>
-    <div class="input-grid">
-      <div class="input-group">
-        <label>砝码质量 m (kg)</label>
-        <input type="number" id="m" step="any" value="0.11740">
-      </div>
-      <div class="input-group">
-        <label>塔轮半径 r (m)</label>
-        <input type="number" id="r" step="any" value="0.02030">
-      </div>
-      <div class="input-group">
-        <label>圆盘质量 M (kg)</label>
-        <input type="number" id="M" step="any" value="0.58054">
-      </div>
-      <div class="input-group">
-        <label>圆盘半径 R (m)</label>
-        <input type="number" id="R" step="any" value="0.1000">
-      </div>
-      <div class="input-group">
-        <label>重力加速度 g (m/s²)</label>
-        <input type="number" id="g" step="any" value="9.80">
-      </div>
-    </div>
-  </div>
+  <script>
+    const MEASURE_COUNT = 6;
+    const mainLayout = document.getElementById("mainLayout");
 
-  <div class="card">
-    <div class="card-title">⚠️ 直接测量的不确定度限值</div>
-    <div class="sub-tip">
-      质量、长度默认按均匀分布处理；角加速度限值默认按正态分布的扩展不确定度处理，置信因子 kβ 可按实验要求修改。
-    </div>
-    <div class="input-grid">
-      <div class="input-group">
-        <label>质量限值 Δm (kg)</label>
-        <input type="number" id="delta_m" step="any" value="0.00001">
-      </div>
-      <div class="input-group">
-        <label>塔轮半径限值 Δr (m)</label>
-        <input type="number" id="delta_r" step="any" value="0.0001">
-      </div>
-      <div class="input-group">
-        <label>角加速度限值 Δβ (rad/s²)</label>
-        <input type="number" id="delta_beta" step="any" value="0.001">
-      </div>
-      <div class="input-group">
-        <label>角加速度置信因子 kβ</label>
-        <input type="number" id="k_beta" step="any" value="3">
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">⏱️ 角加速度测量数据输入 β (rad/s²)</div>
-    <div class="sub-tip">
-      当前版本每组 β 输入 6 个读数，与 PPT 中“提取的角加速度 1–6”保持一致。计算时先求各组平均值，再代入转动惯量公式。
-    </div>
-
-    <div class="beta-wrap">
-      <div class="data-grid data-head">
-        <div>变量组别</div>
-        <div>第1次</div>
-        <div>第2次</div>
-        <div>第3次</div>
-        <div>第4次</div>
-        <div>第5次</div>
-        <div>第6次</div>
-      </div>
-
-      <div class="data-grid">
-        <div class="data-label">β₁ 载物台有力矩</div>
-        <input type="number" id="b1_1" step="any" value="5.619">
-        <input type="number" id="b1_2" step="any" value="5.624">
-        <input type="number" id="b1_3" step="any" value="5.592">
-        <input type="number" id="b1_4" step="any" value="5.589">
-        <input type="number" id="b1_5" step="any" value="5.566">
-        <input type="number" id="b1_6" step="any" value="5.382">
-      </div>
-
-      <div class="data-grid">
-        <div class="data-label">β₂ 载物台无力矩</div>
-        <input type="number" id="b2_1" step="any" value="-0.325">
-        <input type="number" id="b2_2" step="any" value="-0.340">
-        <input type="number" id="b2_3" step="any" value="-0.325">
-        <input type="number" id="b2_4" step="any" value="-0.331">
-        <input type="number" id="b2_5" step="any" value="-0.323">
-        <input type="number" id="b2_6" step="any" value="-0.330">
-      </div>
-
-      <div class="data-grid">
-        <div class="data-label">β₃ 载物台+圆盘有力矩</div>
-        <input type="number" id="b3_1" step="any" value="3.177">
-        <input type="number" id="b3_2" step="any" value="3.217">
-        <input type="number" id="b3_3" step="any" value="3.197">
-        <input type="number" id="b3_4" step="any" value="3.205">
-        <input type="number" id="b3_5" step="any" value="3.194">
-        <input type="number" id="b3_6" step="any" value="3.089">
-      </div>
-
-      <div class="data-grid">
-        <div class="data-label">β₄ 载物台+圆盘无力矩</div>
-        <input type="number" id="b4_1" step="any" value="-0.172">
-        <input type="number" id="b4_2" step="any" value="-0.152">
-        <input type="number" id="b4_3" step="any" value="-0.164">
-        <input type="number" id="b4_4" step="any" value="-0.154">
-        <input type="number" id="b4_5" step="any" value="-0.158">
-        <input type="number" id="b4_6" step="any" value="-0.153">
-      </div>
-    </div>
-
-    <div class="formula-box">
-      计算公式：I₀ = mr(g − rβ̄₁)/(β̄₁ − β̄₂)，I₁ = mr(g − rβ̄₃)/(β̄₃ − β̄₄)，I盘 = I₁ − I₀，I理论 = 1/2·MR²。
-    </div>
-  </div>
-
-  <div class="actions">
-    <button class="btn btn-primary" onclick="calculate()">🧮 计算结果</button>
-    <button class="btn btn-danger" onclick="resetInputs()">🔄 重置输入</button>
-  </div>
-
-  <div id="resultBox" class="result-box">
-    <div class="card-title" style="border-bottom-color: #b7eb8f; color: #389e0d;">📊 计算结果展示</div>
-
-    <div class="result-grid">
-      <div class="result-item">
-        <div class="result-title">载物台转动惯量 I₀ (kg·m²)</div>
-        <div class="result-value" id="res_I0">-</div>
-      </div>
-      <div class="result-item">
-        <div class="result-title">载物台+圆盘总转动惯量 I₁ (kg·m²)</div>
-        <div class="result-value" id="res_I1">-</div>
-      </div>
-      <div class="result-item">
-        <div class="result-title">圆盘转动惯量实验值 I盘 (kg·m²)</div>
-        <div class="result-value" id="res_Idisk">-</div>
-      </div>
-      <div class="result-item">
-        <div class="result-title">圆盘转动惯量理论值 I理论 (kg·m²)</div>
-        <div class="result-value" id="res_Itheory">-</div>
-      </div>
-      <div class="result-item">
-        <div class="result-title">测量相对误差 E (%)</div>
-        <div class="result-value" id="res_Error">-</div>
-      </div>
-      <div class="result-item">
-        <div class="result-title">合成标准不确定度 u(I盘) (kg·m²)</div>
-        <div class="result-value" id="res_uI">-</div>
-      </div>
-      <div class="result-item final-result">
-        <div class="result-title" style="color: #0050b3;">最终实验结果表达</div>
-        <div class="result-value" id="res_Final">-</div>
-      </div>
-    </div>
-
-    <table class="mean-table">
-      <thead>
-        <tr>
-          <th>β组别</th>
-          <th>β̄₁</th>
-          <th>β̄₂</th>
-          <th>β̄₃</th>
-          <th>β̄₄</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>六次测量平均值 / (rad·s⁻²)</td>
-          <td id="mean_b1">-</td>
-          <td id="mean_b2">-</td>
-          <td id="mean_b3">-</td>
-          <td id="mean_b4">-</td>
-        </tr>
-        <tr>
-          <td>A类标准不确定度</td>
-          <td id="ua_b1">-</td>
-          <td id="ua_b2">-</td>
-          <td id="ua_b3">-</td>
-          <td id="ua_b4">-</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="note">
-      说明：本工具采用六组 β 读数参与平均和 A 类不确定度计算；若课堂展示只需要“快速算结果”，保留默认数据后直接点击“计算结果”即可。
-    </div>
-  </div>
-</div>
-
-<script>
-  const MEASURE_COUNT = 6;
-
-  function getVal(id) {
-    const raw = document.getElementById(id).value;
-    const val = parseFloat(raw);
-    if (!Number.isFinite(val)) {
-      throw new Error("输入框 " + id + " 的数值无效");
+    function getVal(id) {
+      const raw = document.getElementById(id).value;
+      const val = parseFloat(raw);
+      if (!Number.isFinite(val)) {
+        throw new Error("“" + id + "”的数值无效");
+      }
+      return val;
     }
-    return val;
-  }
 
-  function getArr(prefix) {
-    return Array.from({ length: MEASURE_COUNT }, (_, i) => getVal(prefix + "_" + (i + 1)));
-  }
+    function getArr(prefix) {
+      return Array.from({ length: MEASURE_COUNT }, (_, i) => getVal(prefix + "_" + (i + 1)));
+    }
 
-  function calcMean(arr) {
-    return arr.reduce((a, b) => a + b, 0) / arr.length;
-  }
+    function calcMean(arr) {
+      return arr.reduce((a, b) => a + b, 0) / arr.length;
+    }
 
-  // A类标准不确定度：平均值的标准不确定度
-  function calcTypeA(arr) {
-    if (arr.length <= 1) return 0;
-    const mean = calcMean(arr);
-    const sumSq = arr.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0);
-    return Math.sqrt(sumSq / (arr.length * (arr.length - 1)));
-  }
+    function calcTypeA(arr) {
+      if (arr.length <= 1) return 0;
+      const mean = calcMean(arr);
+      const sumSq = arr.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0);
+      return Math.sqrt(sumSq / (arr.length * (arr.length - 1)));
+    }
 
-  function requirePositive(name, value) {
-    if (!(value > 0)) throw new Error(name + " 必须大于 0");
-  }
+    function requirePositive(name, value) {
+      if (!(value > 0)) {
+        throw new Error(name + "必须大于 0");
+      }
+    }
 
-  function formatFixed(x, digits = 5) {
-    return Number.isFinite(x) ? x.toFixed(digits) : "-";
-  }
+    function formatFixed(x, digits = 5) {
+      return Number.isFinite(x) ? x.toFixed(digits) : "—";
+    }
 
-  function formatSci(x, digits = 3) {
-    return Number.isFinite(x) ? x.toExponential(digits) : "-";
-  }
+    function formatSci(x, digits = 2) {
+      return Number.isFinite(x) ? x.toExponential(digits) : "—";
+    }
 
-  function calculate() {
-    try {
+    function calculate() {
       const m = getVal("m");
       const r = getVal("r");
       const M = getVal("M");
@@ -566,28 +822,22 @@
       const den0 = b1_bar - b2_bar;
       const den1 = b3_bar - b4_bar;
       if (Math.abs(den0) < 1e-12 || Math.abs(den1) < 1e-12) {
-        throw new Error("β平均值导致公式分母过小，请检查角加速度数据。");
+        throw new Error("β 平均值导致公式分母过小，请检查角加速度数据");
       }
       if (g - r * b1_bar <= 0 || g - r * b3_bar <= 0) {
-        throw new Error("g - rβ 必须大于 0，请检查单位或角加速度数据。");
+        throw new Error("g - rβ 必须大于 0，请检查单位或角加速度数据");
       }
 
-      // 转动惯量
       const I0 = (m * r * (g - r * b1_bar)) / den0;
       const I1 = (m * r * (g - r * b3_bar)) / den1;
       const I_disk = I1 - I0;
       const I_theory = 0.5 * M * Math.pow(R, 2);
       const E = Math.abs(I_disk - I_theory) / I_theory * 100;
 
-      // B类标准不确定度：质量和长度默认均匀分布；β默认按kβ换算
-      const uB_m = delta_m / Math.sqrt(3);
-      const uB_r = delta_r / Math.sqrt(3);
-      const uB_beta = delta_beta / k_beta;
+      const uB_m = Math.abs(delta_m) / Math.sqrt(3);
+      const uB_r = Math.abs(delta_r) / Math.sqrt(3);
+      const uB_beta = Math.abs(delta_beta) / k_beta;
 
-      const u_m = Math.abs(uB_m);
-      const u_r = Math.abs(uB_r);
-
-      // β合成标准不确定度
       const uA_b1 = calcTypeA(b1);
       const uA_b2 = calcTypeA(b2);
       const uA_b3 = calcTypeA(b3);
@@ -598,20 +848,18 @@
       const u_b3 = Math.sqrt(Math.pow(uA_b3, 2) + Math.pow(uB_beta, 2));
       const u_b4 = Math.sqrt(Math.pow(uA_b4, 2) + Math.pow(uB_beta, 2));
 
-      // I0不确定度传递公式：对 ln I 进行相对不确定度传播
-      const term_m = Math.pow(u_m / m, 2);
+      const term_m = Math.pow(uB_m / m, 2);
 
-      const term_r_I0 = Math.pow((1 / r - b1_bar / (g - r * b1_bar)) * u_r, 2);
+      const term_r_I0 = Math.pow((1 / r - b1_bar / (g - r * b1_bar)) * uB_r, 2);
       const term_b1_I0 = Math.pow((-r / (g - r * b1_bar) - 1 / den0) * u_b1, 2);
       const term_b2_I0 = Math.pow(u_b2 / den0, 2);
       const u_I0 = Math.abs(I0) * Math.sqrt(term_m + term_r_I0 + term_b1_I0 + term_b2_I0);
 
-      const term_r_I1 = Math.pow((1 / r - b3_bar / (g - r * b3_bar)) * u_r, 2);
+      const term_r_I1 = Math.pow((1 / r - b3_bar / (g - r * b3_bar)) * uB_r, 2);
       const term_b3_I1 = Math.pow((-r / (g - r * b3_bar) - 1 / den1) * u_b3, 2);
       const term_b4_I1 = Math.pow(u_b4 / den1, 2);
       const u_I1 = Math.abs(I1) * Math.sqrt(term_m + term_r_I1 + term_b3_I1 + term_b4_I1);
 
-      // 圆盘实验值 I盘 = I1 - I0
       const u_I_disk = Math.sqrt(Math.pow(u_I1, 2) + Math.pow(u_I0, 2));
 
       document.getElementById("res_I0").innerText = formatFixed(I0, 5);
@@ -620,9 +868,8 @@
       document.getElementById("res_Itheory").innerText = formatFixed(I_theory, 5);
       document.getElementById("res_Error").innerText = E.toFixed(2) + " %";
       document.getElementById("res_uI").innerText = formatFixed(u_I_disk, 5) + "（" + formatSci(u_I_disk, 2) + "）";
-
       document.getElementById("res_Final").innerText =
-        `I = (${formatFixed(I_disk, 5)} ± ${formatFixed(u_I_disk, 5)}) kg·m²`;
+        "I = (" + formatFixed(I_disk, 5) + " ± " + formatFixed(u_I_disk, 5) + ") kg·m²";
 
       document.getElementById("mean_b1").innerText = b1_bar.toFixed(3);
       document.getElementById("mean_b2").innerText = b2_bar.toFixed(3);
@@ -633,22 +880,26 @@
       document.getElementById("ua_b2").innerText = uA_b2.toFixed(5);
       document.getElementById("ua_b3").innerText = uA_b3.toFixed(5);
       document.getElementById("ua_b4").innerText = uA_b4.toFixed(5);
-
-      document.getElementById("resultBox").classList.add("active");
-      document.getElementById("resultBox").scrollIntoView({ behavior: "smooth", block: "start" });
-
-    } catch (error) {
-      alert("计算出错：" + error.message);
-      console.error(error);
     }
-  }
 
-  function resetInputs() {
-    if (confirm("确定要重置所有数据到默认状态吗？")) {
-      window.location.reload();
+    function showResults() {
+      try {
+        calculate();
+        mainLayout.classList.add("results-open");
+      } catch (error) {
+        alert("计算出错：" + error.message);
+        console.error(error);
+      }
     }
-  }
-</script>
 
+    function resetInputs() {
+      const inputs = document.querySelectorAll("input");
+      inputs.forEach(input => {
+        input.value = input.defaultValue;
+      });
+      mainLayout.classList.remove("results-open");
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    }
+  </script>
 </body>
 </html>
